@@ -79,18 +79,6 @@ The project evaluates three chunking approaches:
 
 ## Key Features
 
-## Dataset
-
-## Architecture
-
-## Evaluation
-
-## Technologies
-
-## Running the Application
-
-## Features
-
 * Semantic search using BAAI/bge-small-en-v1.5 embeddings
 * PostgreSQL + pgvector vector database
 * Multiple chunking strategies:
@@ -103,13 +91,18 @@ The project evaluates three chunking approaches:
 * AI-generated complaint overviews using a local Ollama model
 * Streamlit user interface
 
-## Project Structure
+## Dataset
 
-* `app/` — Streamlit application
-* `notebooks/` — Data preprocessing, chunking, and embedding generation
-* `scripts/` — Data loading and utility scripts
-* `evaluation/` — Retrieval and reranking evaluation experiments
-* `sql/` — Database schema and setup files
+This project uses the Consumer Financial Protection Bureau (CFPB) Consumer Complaint Database.
+- Total complaints analyzed: 3.58 million
+- Complaints with narratives: 1.29 million
+- Retrieval corpus after deduplication: 1.22 million
+- Embedding model: BAAI/bge-small-en-v1.5
+- Database: PostgreSQL + pgvector
+
+## Architecture
+
+## Evaluation
 
 ## Technologies
 
@@ -123,18 +116,18 @@ The project evaluates three chunking approaches:
 * Pandas
 * NumPy
 
-## Dataset
-
-This project uses the Consumer Financial Protection Bureau (CFPB) Consumer Complaint Database.
-- Total complaints analyzed: 3.58 million
-- Complaints with narratives: 1.29 million
-- Retrieval corpus after deduplication: 1.22 million
-- Embedding model: BAAI/bge-small-en-v1.5
-- Database: PostgreSQL + pgvector
-
 ## Running the Application
 
 ```bash
 pip install -r requirements.txt
 streamlit run app/app.py
 ```
+
+## Project Structure
+
+* `app/` — Streamlit application
+* `notebooks/` — Data preprocessing, chunking, and embedding generation
+* `scripts/` — Data loading and utility scripts
+* `evaluation/` — Retrieval and reranking evaluation experiments
+* `sql/` — Database schema and setup files
+
