@@ -1,12 +1,8 @@
 import streamlit as st
-import os
 import psycopg2
 import requests
-from dotenv import load_dotenv
 from pgvector.psycopg2 import register_vector
 from sentence_transformers import SentenceTransformer, CrossEncoder
-
-load_dotenv()
 
 st.markdown("""
 <style>
@@ -27,7 +23,8 @@ st.set_page_config(
 
 st.title("RAG Complaint Retrieval System")
 
-# chat history
+# Initialize chat history
+# Chat history is stored in Streamlit session state.
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
@@ -48,11 +45,11 @@ model = load_model()
 
 def get_connection():
     conn = psycopg2.connect(
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT")
+        dbname="ragdb",
+        user="postgres",
+        password="postgres",
+        host="localhost",
+        port=5433
     )
     register_vector(conn)
     return conn
@@ -67,30 +64,22 @@ st.sidebar.title("Search Settings")
 
 selected_method_name = st.sidebar.selectbox(
     "Retrieval method",
-    list(method_options.keys())
+    list(method_options.keys()),
+    help=(
+        "Based on our evaluation, fixed-size and recursive chunking performed best overall. "
+        "Token-aware semantic chunking was weaker in this test."
+    )
 )
 
 # 3
 # Enable feature
 generate_overview = st.sidebar.checkbox(
     "Generate AI overview",
-    value=False
+    value=False,
+    help="AI overview uses a local Ollama model and may take some time."
 )
-# 3
-# Info message
-if generate_overview:
-    st.sidebar.info(
-        "AI overview uses a local Ollama model and may take some time."
-    )
-
-
 
 table_name = method_options[selected_method_name]
-
-st.sidebar.info(
-    "Based on our evaluation, fixed-size and recursive performed best overall. "
-    "Token-aware semantic was the weakest in this test."
-)
 
 # top_k = st.sidebar.slider(
 #     "Number of results",
@@ -105,12 +94,10 @@ top_k = 5
 # Reranking UI controls
 use_reranking = st.sidebar.checkbox(
     "Use cross-encoder reranking",
-    value=False
+    value=False,
+    help="Cross-encoder reranking may take a couple of minutes to complete."
 )
 if use_reranking:
-    st.sidebar.info(
-        "Warning: Cross-encoder reranking may take a couple of minutes to complete."
-    )
     candidate_k = 30
     # candidate_k = st.sidebar.slider(
     #     "Reranking candidate pool",
@@ -298,6 +285,32 @@ def display_results(final_results, use_reranking):
                 f"View retrieved chunk — chunk {item['chunk_index'] + 1} of {item['chunk_count_for_complaint']}"
             ):
                 st.write(get_narrative_only(item["retrieved_chunk"]))
+                
+# Display all turns in the conversation
+def display_chat_turns(chat):
+    turns = chat.get("turns", [
+        {
+            "question": chat["question"],
+            "overview": chat["overview"],
+            "use_reranking": chat["use_reranking"],
+            "results": chat["results"]
+        }
+    ])
+
+    for i, turn in enumerate(turns, start=1):
+        st.markdown("---")
+        st.subheader(f"Question {i}")
+        st.write(turn["question"])
+
+        if turn["overview"]:
+            st.subheader("AI-Generated Overview")
+            st.write(turn["overview"])
+
+        display_results(
+            turn["results"],
+            turn["use_reranking"]
+        )
+
 
 
 main_col, history_col = st.columns([4, 1])
@@ -310,6 +323,33 @@ with main_col:
         )
         search_clicked = st.form_submit_button("Search")
 
+
+# Detect whether this is a follow-up
+def is_followup_chat():
+    return "selected_chat" in st.session_state
+
+
+
+# Build the memory-enhanced query
+def build_memory_enhanced_query(user_question, max_memory_questions=3):
+    if is_followup_chat():
+        memory = st.session_state.selected_chat.get("memory", [])
+        recent_memory = memory[-max_memory_questions:]
+
+        memory_text = "\n".join(recent_memory)
+
+        enhanced_query = f"""
+        Previous questions in this chat:
+        {memory_text}
+
+        Current question:
+        {user_question}
+        """
+        return enhanced_query.strip()
+        
+    return user_question
+
+# Load a selected previous chat
 def select_previous_chat(chat):
     st.session_state.selected_chat = chat
     st.session_state.question_input = ""
@@ -324,6 +364,7 @@ with history_col:
         if not st.session_state.chat_history:
             st.info("No previous searches yet.")
         else:
+            # Display saved chats in the right-side panel
             for i, chat in enumerate(reversed(st.session_state.chat_history)):
                 short_title = chat["question"]
 
@@ -353,43 +394,49 @@ with main_col:
         current_chat = st.session_state.current_chat
 
         st.subheader("Search Results")
-        st.write("**Question:**", current_chat["question"])
+        # st.write("**Question:**", current_chat["question"])
 
-        if current_chat["overview"]:
-            st.subheader("AI-Generated Overview")
-            st.write(current_chat["overview"])
+        # if current_chat["overview"]:
+        #     st.subheader("AI-Generated Overview")
+        #     st.write(current_chat["overview"])
 
-        display_results(
-            current_chat["results"],
-            current_chat["use_reranking"]
-        )
+        display_chat_turns(current_chat)
+        # display_results(
+        #     current_chat["results"],
+        #     current_chat["use_reranking"]
+        # )
 
     elif "selected_chat" in st.session_state and not search_clicked:
         selected_chat = st.session_state.selected_chat
 
         st.subheader("Selected Previous Search")
-        st.write("**Question:**", selected_chat["question"])
+        # st.write("**Question:**", selected_chat["question"])
 
-        if selected_chat["overview"]:
-            st.subheader("AI-Generated Overview")
-            st.write(selected_chat["overview"])
+        # if selected_chat["overview"]:
+        #     st.subheader("AI-Generated Overview")
+        #     st.write(selected_chat["overview"])
 
-        display_results(
-            selected_chat["results"],
-            selected_chat["use_reranking"]
-        )
+        display_chat_turns(selected_chat)
+        # display_results(
+        #     selected_chat["results"],
+        #     selected_chat["use_reranking"]
+        # )
 
 # 2
 # Stage 1 message
 with main_col:
     if search_clicked and user_question:
+        # st.write("Follow-up:", is_followup_chat())
         if use_reranking:
             st.write(f"Stage 1: Retrieving top {candidate_k} candidates...")
         else:
             st.write("Searching database...")
 
+        # Embed the enhanced query
+        enhanced_query = build_memory_enhanced_query(user_question)
+
         query_embedding = model.encode(
-            user_question,
+            enhanced_query,
             normalize_embeddings=True
         )
 
@@ -578,16 +625,51 @@ with main_col:
             else:
                 overview = None
             # chat history
-            st.session_state.chat_history.append({
-                "question": user_question,
-                "overview": overview,
-                "retrieval_method": selected_method_name,
-                "use_reranking": use_reranking,
-                "results": final_results
+            # Save follow-up as a new turn
+            if is_followup_chat():
+                selected_chat = st.session_state.selected_chat
+                selected_chat["memory"].append(user_question)
 
-            })
+                new_turn = {
+                    "question": user_question,
+                    "overview": overview,
+                    "retrieval_method": selected_method_name,
+                    "use_reranking": use_reranking,
+                    "results": final_results
+                }
 
-            st.session_state.current_chat = st.session_state.chat_history[-1]
+                if "turns" not in selected_chat:
+                    selected_chat["turns"] = [
+                        {
+                            "question": selected_chat["question"],
+                            "overview": selected_chat["overview"],
+                            "retrieval_method": selected_chat["retrieval_method"],
+                            "use_reranking": selected_chat["use_reranking"],
+                            "results": selected_chat["results"]
+                        }
+                    ]
+
+                selected_chat["turns"].append(new_turn)
+
+                selected_chat["overview"] = overview
+                selected_chat["results"] = final_results
+
+                st.session_state.current_chat = selected_chat
+            else:
+
+                # Create and save a new chat after search
+                new_chat = {
+                    "question": user_question,
+                    "overview": overview,
+                    "retrieval_method": selected_method_name,
+                    "use_reranking": use_reranking,
+                    "results": final_results,
+                    "memory": [user_question]
+                }
+
+                st.session_state.chat_history.append(new_chat)
+                st.session_state.current_chat = new_chat
+
 
             if "selected_chat" in st.session_state:
                 del st.session_state.selected_chat
