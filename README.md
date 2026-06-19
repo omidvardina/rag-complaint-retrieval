@@ -7,7 +7,51 @@ A Retrieval-Augmented Generation (RAG) system for searching and analyzing consum
 A demonstration of the Streamlit application is available below.
 [Download Demo Video](assets/demo/demo.mov)
 
+## Key Features
+
+* Semantic search using BAAI/bge-small-en-v1.5 embeddings
+* PostgreSQL + pgvector vector database
+* Multiple chunking strategies:
+
+  * Fixed-size chunking
+  * Recursive chunking
+  * Token-aware semantic chunking
+* Metadata filtering (Product, State, Company)
+* Cross-encoder reranking
+* AI-generated complaint overviews using a local Ollama model
+* Streamlit user interface
+
+## Dataset
+
+This project uses the Consumer Financial Protection Bureau (CFPB) Consumer Complaint Database.
+Dataset statistics:
+
+- Total complaints: 3.58 million
+- Complaints containing narratives: 1.29 million
+- Retrieval corpus after deduplication: 1.22 million
+- Embedding model: BAAI/bge-small-en-v1.5
+- Vector database: PostgreSQL + pgvector
+
+## Architecture
+
+The system follows a Retrieval-Augmented Generation (RAG) pipeline:
+
+1. Consumer complaints are cleaned and deduplicated.
+2. Complaint narratives are chunked using one of three chunking strategies:
+   - Fixed-size chunking
+   - Recursive chunking
+   - Token-aware semantic chunking
+3. Chunks are embedded using BAAI/bge-small-en-v1.5.
+4. Embeddings are stored in PostgreSQL using pgvector.
+5. User queries are embedded and matched through vector similarity search.
+6. Optional metadata filters narrow the search space.
+7. Optional cross-encoder reranking improves ranking quality.
+8. A local LLM generates an overview of the retrieved complaints.
+9. Results are displayed through a Streamlit interface.
+
 ## Application Screenshots
+
+The screenshots below demonstrate the major capabilities of the system, including semantic retrieval, metadata filtering, reranking, AI-generated summaries, conversation-aware retrieval, and chunking strategy comparisons.
 
 ### Main Interface
 
@@ -43,7 +87,7 @@ A local LLM generates a concise overview summarizing themes across the retrieved
 
 ![Complaint Summary](assets/advanced_retrieval/07_complaint_summary_inspection.png)
 
-Users can inspect retrieved complaints, associated metadata, and generated summaries.
+Retrieved complaints expose metadata, generated summaries, and supporting evidence used during retrieval.
 
 ### Chunk and Complaint Preview
 
@@ -55,7 +99,7 @@ Retrieved chunks and original complaint narratives can be examined for transpare
 
 ![Conversation Memory](assets/conversation_memory/11_multi_turn_conversation.png)
 
-Conversation history is incorporated into retrieval so that follow-up questions can use context from previous turns.
+Retrieval queries are automatically enhanced using recent conversation history, enabling context-aware follow-up questions.
 
 ## Chunking Strategy Comparison
 
@@ -77,32 +121,20 @@ The project evaluates three chunking approaches:
 
 ![Token Aware](assets/chunking_comparison/14_token_aware_semantic_chunking.png)
 
-## Key Features
-
-* Semantic search using BAAI/bge-small-en-v1.5 embeddings
-* PostgreSQL + pgvector vector database
-* Multiple chunking strategies:
-
-  * Fixed-size chunking
-  * Recursive chunking
-  * Token-aware semantic chunking
-* Metadata filtering (Product, State, Company)
-* Cross-encoder reranking
-* AI-generated complaint overviews using a local Ollama model
-* Streamlit user interface
-
-## Dataset
-
-This project uses the Consumer Financial Protection Bureau (CFPB) Consumer Complaint Database.
-- Total complaints analyzed: 3.58 million
-- Complaints with narratives: 1.29 million
-- Retrieval corpus after deduplication: 1.22 million
-- Embedding model: BAAI/bge-small-en-v1.5
-- Database: PostgreSQL + pgvector
-
-## Architecture
-
 ## Evaluation
+
+The project evaluates retrieval quality across multiple chunking strategies:
+
+- Fixed-size chunking
+- Recursive chunking
+- Token-aware semantic chunking
+
+Retrieval performance was assessed using:
+
+- LLM-as-a-Judge evaluation
+- Cross-encoder relevance scoring
+
+The evaluation framework enables systematic comparison of retrieval quality across different preprocessing approaches.
 
 ## Technologies
 
