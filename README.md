@@ -2,6 +2,93 @@
 
 A Retrieval-Augmented Generation (RAG) system for searching and analyzing consumer complaint narratives using semantic search, vector databases, reranking, and large language models.
 
+## Demo
+
+A demonstration of the Streamlit application is available below.
+[Download Demo Video](assets/demo/demo.mov)
+
+## Application Screenshots
+
+### Main Interface
+
+![Main Interface](assets/core_retrieval/01_main_interface.png)
+
+The Streamlit interface allows users to search consumer complaints using semantic retrieval, metadata filtering, reranking, and AI-generated summaries.
+
+### Vector Search Results
+
+![Vector Search](assets/core_retrieval/02_vector_search_results.png)
+
+Baseline semantic retrieval using BAAI/bge-small-en-v1.5 embeddings and PostgreSQL pgvector similarity search.
+
+### Metadata-Filtered Retrieval
+
+![Filtered Search](assets/core_retrieval/05_filtered_vector_search.png)
+
+Semantic retrieval combined with metadata filtering by product, state, and company.
+
+### Cross-Encoder Reranking
+
+![Cross Encoder](assets/advanced_retrieval/03_cross_encoder_reranking.png)
+
+Retrieved complaints are reranked using a cross-encoder model to improve ranking quality.
+
+### AI-Generated Overview
+
+![AI Overview](assets/advanced_retrieval/04_ai_overview.png)
+
+A local LLM generates a concise overview summarizing themes across the retrieved complaints.
+
+### Complaint Inspection
+
+![Complaint Summary](assets/advanced_retrieval/07_complaint_summary_inspection.png)
+
+Users can inspect retrieved complaints, associated metadata, and generated summaries.
+
+### Chunk and Complaint Preview
+
+![Chunk Preview](assets/advanced_retrieval/08_chunk_and_complaint_preview.png)
+
+Retrieved chunks and original complaint narratives can be examined for transparency and debugging.
+
+### Conversation-Aware Retrieval
+
+![Conversation Memory](assets/conversation_memory/11_multi_turn_conversation.png)
+
+Conversation history is incorporated into retrieval so that follow-up questions can use context from previous turns.
+
+## Chunking Strategy Comparison
+
+The project evaluates three chunking approaches:
+
+1. Fixed-size chunking
+2. Recursive chunking
+3. Token-aware semantic chunking
+
+### Fixed-Size Chunking
+
+![Fixed](assets/chunking_comparison/12_fixed_size_chunking.png)
+
+### Recursive Chunking
+
+![Recursive](assets/chunking_comparison/13_recursive_chunking.png)
+
+### Token-Aware Semantic Chunking
+
+![Token Aware](assets/chunking_comparison/14_token_aware_semantic_chunking.png)
+
+## Key Features
+
+## Dataset
+
+## Architecture
+
+## Evaluation
+
+## Technologies
+
+## Running the Application
+
 ## Features
 
 * Semantic search using BAAI/bge-small-en-v1.5 embeddings
@@ -39,6 +126,11 @@ A Retrieval-Augmented Generation (RAG) system for searching and analyzing consum
 ## Dataset
 
 This project uses the Consumer Financial Protection Bureau (CFPB) Consumer Complaint Database.
+- Total complaints analyzed: 3.58 million
+- Complaints with narratives: 1.29 million
+- Retrieval corpus after deduplication: 1.22 million
+- Embedding model: BAAI/bge-small-en-v1.5
+- Database: PostgreSQL + pgvector
 
 ## Running the Application
 
